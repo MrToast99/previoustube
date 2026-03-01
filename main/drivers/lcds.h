@@ -18,5 +18,6 @@ void lcd_blit_rect(int x, int y, int width, int height, const uint16_t *pixels,
 void lcds_reset();
 void lcds_on();
 void lcds_off();
+void lcds_set_brightness(uint8_t brightness); // 0=off, 255=full
 
 uint16_t color_to_rgb565(uint8_t red, uint8_t green, uint8_t blue);

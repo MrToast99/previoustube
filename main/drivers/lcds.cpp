@@ -6,6 +6,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <driver/gpio.h>
+#include <driver/ledc.h>
 #include <driver/spi_master.h>
 #include <esp_heap_caps.h>
 #include <esp_log.h>
@@ -65,8 +66,27 @@ void lcds_init() {
   gpio_set_level(CONFIG_GPIO_DC, 0);
 
   gpio_reset_pin(CONFIG_GPIO_BL);
-  gpio_set_direction(CONFIG_GPIO_BL, GPIO_MODE_OUTPUT);
-  lcds_off();
+  // Configure PWM for backlight brightness control
+  ledc_timer_config_t ledc_timer = {
+      .speed_mode = LEDC_LOW_SPEED_MODE,
+      .duty_resolution = LEDC_TIMER_8_BIT,
+      .timer_num = LEDC_TIMER_0,
+      .freq_hz = 25000, // 25kHz - above audible range
+      .clk_cfg = LEDC_AUTO_CLK,
+  };
+  ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
+
+  ledc_channel_config_t ledc_channel = {
+      .gpio_num = CONFIG_GPIO_BL,
+      .speed_mode = LEDC_LOW_SPEED_MODE,
+      .channel = LEDC_CHANNEL_0,
+      .intr_type = LEDC_INTR_DISABLE,
+      .timer_sel = LEDC_TIMER_0,
+      .duty = 255, // start off (inverted: 255=off, 0=full brightness)
+      .hpoint = 0,
+  };
+  ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));
+  ESP_ERROR_CHECK(ledc_fade_func_install(0));
 
   spi_bus_config_t bus_config = {.mosi_io_num = CONFIG_MOSI_GPIO,
                                  .miso_io_num = -1,
@@ -88,8 +108,19 @@ void lcds_init() {
   }
 }
 
-void lcds_on() { gpio_set_level(CONFIG_GPIO_BL, 0); }
-void lcds_off() { gpio_set_level(CONFIG_GPIO_BL, 1); }
+// Backlight is active-low: duty 0 = fully on, 255 = off
+void lcds_on() { lcds_set_brightness(255); }
+void lcds_off() {
+  ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 255);
+  ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+}
+
+void lcds_set_brightness(uint8_t brightness) {
+  // brightness: 0=off, 255=full. Invert for active-low backlight.
+  uint32_t duty = 255 - brightness;
+  ledc_set_fade_with_time(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty, 300);
+  ledc_fade_start(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, LEDC_FADE_NO_WAIT);
+}
 
 void deselect_all_displays() {
   for (auto i : GPIO_CS_PINS) {
@@ -199,6 +230,7 @@ void spi_write_bytes(const uint8_t *data, size_t length, uint8_t dc) {
 
       spi_transaction_t transaction = {
           .length = this_send_length * 8,
+          .user = (void *)(uint32_t)dc,
           .tx_buffer = remaining_data,
       };
 
@@ -349,7 +381,7 @@ void lcd_blit_rect(int x, int y, int width, int height, const uint16_t *pixels,
   {
     write_command_byte(CMD_RASET);
     uint16_t ys = CONFIG_OFFSETY + y;
-    uint16_t ye = CONFIG_OFFSETY + y + height;
+    uint16_t ye = CONFIG_OFFSETY + y + height - 1;
     uint8_t location_data[] = {static_cast<uint8_t>((ys >> 8) & 0xFF),
                                static_cast<uint8_t>(ys & 0xFF),
                                static_cast<uint8_t>((ye >> 8) & 0xFF),

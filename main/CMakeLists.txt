@@ -1,8 +1,10 @@
 idf_component_register(
         SRCS
-        "clock.cpp"
+        "app_mode.cpp"
+        "display_helper.cpp"
         "drivers/lcds.cpp"
         "drivers/leds.cpp"
+        "drivers/speaker.cpp"
         "drivers/touchpads.cpp"
         "drivers/wifi.cpp"
         "flapper.cpp"
@@ -13,8 +15,11 @@ idf_component_register(
         "gui.cpp"
         "led_manager.cpp"
         "main.cpp"
+        "modes.cpp"
         "rtc.cpp"
+        "settings.cpp"
         "spiram_allocate.cpp"
+        "weather.cpp"
         "webserver.cpp"
         INCLUDE_DIRS
         "."
