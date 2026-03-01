@@ -59,11 +59,10 @@ static void do_fetch() {
   response_len = 0;
   memset(response_buf, 0, sizeof(response_buf));
 
-  esp_http_client_config_t config = {
-      .url = url,
-      .event_handler = http_event_handler,
-      .timeout_ms = 10000,
-  };
+  esp_http_client_config_t config = {};
+  config.url = url;
+  config.event_handler = http_event_handler;
+  config.timeout_ms = 10000;
 
   esp_http_client_handle_t client = esp_http_client_init(&config);
   esp_err_t err = esp_http_client_perform(client);

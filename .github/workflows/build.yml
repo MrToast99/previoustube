@@ -16,8 +16,10 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Remove stale dependency lock
-        run: rm -f dependencies.lock
+      - name: Remove stale dependency lock and cached components
+        run: |
+          rm -f dependencies.lock
+          rm -rf managed_components
 
       - name: esp-idf build
         uses: espressif/esp-idf-ci-action@v1
