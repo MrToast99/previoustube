@@ -11,8 +11,6 @@
 #include <ctime>
 #include <esp_log.h>
 
-static const char *TAG = "modes";
-
 // ======================== Clock Mode ========================
 
 void clock_mode::timer_cb(lv_timer_t *t) {
@@ -88,13 +86,10 @@ void clock_mode::update() {
 }
 
 void clock_mode::on_middle_tap() {
-  // Shuffle animation
+  // Shuffle animation - blank then re-update
   auto &d = display_helper::get();
-  char r = '0' + (rand() % 10);
-  char text[6] = {r, r, ':', r, r, '\0'};
   for (int i = 0; i < 6; i++) d.set_char(i, "", false);
   d.clear_dual_line();
-  // Then trigger a real update after a beat
   update();
 }
 

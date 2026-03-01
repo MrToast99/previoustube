@@ -1,5 +1,12 @@
 name: Build with ESP-IDF
-on: [push, pull_request]
+on:
+  workflow_dispatch:
+    inputs:
+      esp_idf_version:
+        description: 'ESP-IDF version'
+        required: false
+        default: 'v5.2'
+        type: string
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -9,10 +16,13 @@ jobs:
         with:
           submodules: 'recursive'
 
+      - name: Remove stale dependency lock
+        run: rm -f dependencies.lock
+
       - name: esp-idf build
         uses: espressif/esp-idf-ci-action@v1
         with:
-          esp_idf_version: v5.2
+          esp_idf_version: ${{ inputs.esp_idf_version }}
           target: esp32
 
       - name: Upload firmware artifacts

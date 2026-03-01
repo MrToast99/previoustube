@@ -37,3 +37,4 @@ main/spiffs/wifi.txt
 # using sdkconfig.defaults instead
 sdkconfig
 sdkconfig.old
+dependencies.lock

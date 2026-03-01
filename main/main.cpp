@@ -3,6 +3,7 @@
 
 #include <cJSON.h>
 #include <cstdlib>
+#include <cstring>
 #include <esp_event.h>
 #include <esp_log.h>
 #include <esp_netif_sntp.h>
