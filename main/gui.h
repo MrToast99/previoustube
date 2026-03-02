@@ -6,6 +6,7 @@
 #include <lvgl.h>
 
 void gui_init();
+void gui_start_timer();
 lv_disp_t *gui_get_display(size_t index);
 void gui_invalidate_all_screens();
 

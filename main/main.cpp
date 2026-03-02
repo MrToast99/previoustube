@@ -313,23 +313,17 @@ extern "C" void app_main() {
   // Settings loaded in constructor via NVS
   auto &s = settings::get();
 
-  // Hardware init
+  // Hardware init - order matters for clean startup
+  // 1. LEDs off first (prevent flash)
   leds_init();
   leds_off();
+
+  // 2. LCDs + GUI + display content ready BEFORE anything visible
   lcds_init();
-  speaker_init();
-
-  bool got_time = rtc_init();
-
-  wifi_init(on_wifi_connected);
   gui_init();
-
-  // Display helper (sets up LVGL objects on all 6 screens)
   display_helper::get().init();
 
-  touchpads_init(button_tapped, nullptr);
-
-  // Register all modes
+  // 3. Register modes and render first frame before screens are bright
   auto &mgr = app_manager::get();
   mgr.init();
   mgr.register_mode(AppModeId::CLOCK, &s_clock_mode);
@@ -339,29 +333,32 @@ extern "C" void app_main() {
   mgr.register_mode(AppModeId::DATE_DISPLAY, &s_date_mode);
   mgr.register_mode(AppModeId::TEMPERATURE, &s_temperature_mode);
 
-  // Apply all settings to hardware
-  apply_settings();
-
-  // Start on saved mode (default: CLOCK)
   AppModeId start_mode = (AppModeId)s.active_mode;
   if (start_mode >= AppModeId::NUM_MODES) start_mode = AppModeId::CLOCK;
   mgr.switch_to(start_mode);
 
-  // LEDs on
+  // Force LVGL to render first frame before making screens visible
+  lv_timer_handler();
+  lv_timer_handler();
+
+  // 4. Apply brightness (screens now have content)
+  apply_settings();
+
+  // 5. Now safe to init audio (after display is stable)
+  speaker_init();
+
+  bool got_time = rtc_init();
+
+  wifi_init(on_wifi_connected);
+
+  touchpads_init(button_tapped, nullptr);
+
+  // LEDs on (display is already showing content)
   if (s.led_mode != LedMode::OFF) {
     auto &leds = led_manager::get();
     for (int i = 0; i < NUM_LCDS; i++)
       leds.set_rgb(i, s.led_r, s.led_g, s.led_b);
   }
-
-  // Web server - start BEFORE wifi connect so AP mode has config UI
-  webserver_init(webhook_handler, on_settings_changed);
-
-  // Weather background task
-  weather_init();
-
-  // Startup sound
-  if (s.sound_enabled) speaker_play_startup();
 
   // WiFi connect - or start AP if no credentials
   struct stat st {};
@@ -371,6 +368,18 @@ extern "C" void app_main() {
     ESP_LOGW(TAG, "No wifi.txt found, starting AP provisioning mode");
     wifi_start_ap_provisioning();
   }
+
+  // Web server - start AFTER wifi so network interface is ready
+  webserver_init(webhook_handler, on_settings_changed);
+
+  // Weather background task
+  weather_init();
+
+  // Startup sound
+  if (s.sound_enabled) speaker_play_startup();
+
+  // NOW start the LVGL periodic timer — all init is complete
+  gui_start_timer();
 
   // If RTC had a valid time, kick off display immediately
   if (got_time) {

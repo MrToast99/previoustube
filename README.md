@@ -107,7 +107,7 @@ All endpoints accept/return JSON.
    psk = YourPassword
    ```
 
-2. **AP provisioning:** If no WiFi configured, access the web UI at `http://10.10.10.1` on the `nextube-ap-XXXX` network and enter credentials.
+2. **AP provisioning:** If no WiFi configured, the device automatically starts a `nextube-ap-XXXX` hotspot. Connect to it and open `http://192.168.4.1` to enter your WiFi credentials.
 
 3. **Web UI:** Use the System tab to change WiFi credentials (triggers reboot).
 

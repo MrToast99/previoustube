@@ -99,6 +99,10 @@ void gui_init() {
       GUI_EVENTS, GUI_EVENT_TIMER, timer_event_handler, nullptr, nullptr));
 
   ESP_ERROR_CHECK(esp_timer_create(&timer_args, &lv_timer_handle));
+  // Timer is NOT started here — call gui_start_timer() after all init
+}
+
+void gui_start_timer() {
   ESP_ERROR_CHECK(esp_timer_start_periodic(lv_timer_handle, 5000));
 }
 
