@@ -22,17 +22,26 @@ static const pcf8563_t rtc = {
 static const auto TAG = "external_rtc";
 
 bool rtc_init() {
-  ESP_ERROR_CHECK(i2c_init(i2c_port));
-  ESP_ERROR_CHECK(pcf8563_init(&rtc));
+  esp_err_t err = i2c_init(i2c_port);
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "I2C init failed: %s, RTC disabled", esp_err_to_name(err));
+    return false;
+  }
+
+  pcf8563_err_t perr = pcf8563_init(&rtc);
+  if (perr != PCF8563_OK) {
+    ESP_LOGE(TAG, "pcf8563_init failed: %ld, RTC disabled", perr);
+    return false;
+  }
 
   tm rtc_time = {};
-  pcf8563_err_t err = pcf8563_read(&rtc, &rtc_time);
-  if (err == PCF8563_ERR_LOW_VOLTAGE) {
+  pcf8563_err_t rerr = pcf8563_read(&rtc, &rtc_time);
+  if (rerr == PCF8563_ERR_LOW_VOLTAGE) {
     ESP_LOGE(TAG, "pcf8563_read failed: low voltage");
     return false;
   }
-  if (err != PCF8563_OK) {
-    ESP_LOGE(TAG, "pcf8563_read failed: %ld", err);
+  if (rerr != PCF8563_OK) {
+    ESP_LOGE(TAG, "pcf8563_read failed: %ld", rerr);
     return false;
   }
 
