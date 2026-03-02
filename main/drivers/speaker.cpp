@@ -23,7 +23,7 @@
 static const char *TAG = "speaker";
 
 static constexpr i2s_port_t I2S_PORT = I2S_NUM_0;
-static constexpr int SAMPLE_RATE = 16000;
+static constexpr int SAMPLE_RATE = 44100;
 static constexpr int DMA_BUF_COUNT = 4;
 static constexpr int DMA_BUF_LEN = 256;
 
@@ -39,19 +39,25 @@ void speaker_init() {
       .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
       .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
       .communication_format = I2S_COMM_FORMAT_STAND_MSB,
-      .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+      .intr_alloc_flags = 0,
       .dma_buf_count = DMA_BUF_COUNT,
       .dma_buf_len = DMA_BUF_LEN,
       .use_apll = false,
       .tx_desc_auto_clear = true,
   };
 
-  ESP_ERROR_CHECK(i2s_driver_install(I2S_PORT, &i2s_config, 0, nullptr));
+  esp_err_t err = i2s_driver_install(I2S_PORT, &i2s_config, 0, nullptr);
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "I2S driver install failed: %s, speaker disabled", esp_err_to_name(err));
+    return;
+  }
 
-  // Enable internal DAC output. DAC channel 1 = GPIO25 (right channel),
-  // DAC channel 2 = GPIO26 (left channel). Both are enabled by the I2S
-  // driver in DAC mode; only GPIO25 is connected to the amplifier.
-  ESP_ERROR_CHECK(i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN));
+  err = i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "I2S DAC mode failed: %s", esp_err_to_name(err));
+    i2s_driver_uninstall(I2S_PORT);
+    return;
+  }
 
   // Write silence to initialize
   uint8_t silence[DMA_BUF_LEN * 4];
