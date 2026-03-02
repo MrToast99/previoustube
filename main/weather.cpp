@@ -138,5 +138,3 @@ void weather_init() {
 }
 
 void weather_fetch_now() { fetch_requested = true; }
-
-}

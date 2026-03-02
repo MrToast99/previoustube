@@ -547,5 +547,3 @@ void temperature_mode::on_middle_tap() {
 }
 
 void temperature_mode::on_right_tap() { app_manager::get().next_mode(); }
-
-}

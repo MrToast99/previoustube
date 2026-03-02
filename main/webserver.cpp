@@ -7,7 +7,6 @@
 #include "modes.h"
 #include "settings.h"
 #include "weather.h"
-#include "esp_timer.h"
 
 #include <cJSON.h>
 #include <cstring>
@@ -532,5 +531,3 @@ void webserver_init(webhook_callback_t webhook_cb,
 }
 
 ESP_EVENT_DEFINE_BASE(WEBSERVER_EVENTS);
-
-}
