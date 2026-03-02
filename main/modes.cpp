@@ -136,7 +136,7 @@ void countdown_mode::render() {
   int secs = r % 60;
 
   auto &d = display_helper::get();
-  char text[7];
+  char text[16]; // Increased from 7 to prevent format-truncation warning
 
   if (hours > 0) {
     snprintf(text, sizeof(text), "%02d%02d%02d", hours, mins, secs);
@@ -150,7 +150,7 @@ void countdown_mode::render() {
     display[2] = ':';
     display[3] = text[2]; display[4] = text[3];
     // Show seconds on 6th display dual-line
-    char sec_top[4], sec_bot[4];
+    char sec_top[16], sec_bot[16]; // Increased buffer
     snprintf(sec_top, sizeof(sec_top), "%d", secs / 10);
     snprintf(sec_bot, sizeof(sec_bot), "%d", secs % 10);
     d.set_dual_line(sec_top, sec_bot, false);
@@ -356,7 +356,7 @@ void scoreboard_mode::update() { render(); }
 void scoreboard_mode::render() {
   // Format: "LL-RR" or "LL:RR" or " L-R " depending on score sizes
   auto &d = display_helper::get();
-  char text[7];
+  char text[16]; // Increased from 7
 
   int l = left_score % 1000;  // clamp to 3 digits
   int r = right_score % 1000;
@@ -429,7 +429,7 @@ void date_mode::update() {
 
   if (!show_day_name) {
     // Show MM.DD.YY
-    char text[7];
+    char text[16]; // Increased from 7
     snprintf(text, sizeof(text), "%02d%02d%02d", ti.tm_mon + 1, ti.tm_mday,
              ti.tm_year % 100);
     char display[6] = {text[0], text[1], text[2], text[3], text[4], text[5]};
@@ -440,12 +440,12 @@ void date_mode::update() {
     const char *days[] = {"SU", "MO", "TU", "WE", "TH", "FR", "SA"};
     const char *day = days[ti.tm_wday];
 
-    char text[6];
+    char text[16]; // Increased from 6
     snprintf(text, sizeof(text), "%c%c %2d", day[0], day[1], ti.tm_mday);
     d.set_text(text, true);
 
     // Show month on 6th display
-    char mon_top[4], mon_bot[4];
+    char mon_top[16], mon_bot[16]; // Increased buffers
     snprintf(mon_top, sizeof(mon_top), "%d", (ti.tm_mon + 1) / 10);
     snprintf(mon_bot, sizeof(mon_bot), "%d", (ti.tm_mon + 1) % 10);
     if ((ti.tm_mon + 1) < 10) {
@@ -502,7 +502,7 @@ void temperature_mode::render() {
   bool negative = temp_int < 0;
   if (negative) temp_int = -temp_int;
 
-  char text[6];
+  char text[16]; // Increased from 6
   if (negative) {
     snprintf(text, sizeof(text), "-%3d", temp_int % 1000);
   } else {
@@ -516,7 +516,7 @@ void temperature_mode::render() {
 
   // Show humidity on display 4-5 if available
   if (humidity > 0) {
-    char hum[3];
+    char hum[8]; // Increased from 3
     snprintf(hum, sizeof(hum), "%2d", humidity % 100);
     display[4] = hum[0];
     display[5] = '\0';
@@ -547,3 +547,5 @@ void temperature_mode::on_middle_tap() {
 }
 
 void temperature_mode::on_right_tap() { app_manager::get().next_mode(); }
+
+}

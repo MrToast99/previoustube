@@ -59,7 +59,8 @@ static void do_fetch() {
   response_len = 0;
   memset(response_buf, 0, sizeof(response_buf));
 
-  esp_http_client_config_t config = {};
+  esp_http_client_config_t config;
+  memset(&config, 0, sizeof(config));
   config.url = url;
   config.event_handler = http_event_handler;
   config.timeout_ms = 10000;
@@ -137,3 +138,5 @@ void weather_init() {
 }
 
 void weather_fetch_now() { fetch_requested = true; }
+
+}

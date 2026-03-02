@@ -15,6 +15,7 @@
 #include <esp_log.h>
 #include <esp_ota_ops.h>
 #include <esp_spiffs.h>
+#include <esp_timer.h>
 #include <sys/param.h>
 
 ESP_EVENT_DECLARE_BASE(WEBSERVER_EVENTS);
@@ -500,6 +501,8 @@ void webserver_init(webhook_callback_t webhook_cb,
       WEBSERVER_EVENTS, WEBSERVER_EVENT_WEBHOOK, webhook_event_handler,
       nullptr, nullptr));
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
   static const httpd_uri_t uris[] = {
       REG("/", HTTP_GET, h_root),
       REG("/api/ping", HTTP_GET, h_ping),
@@ -520,9 +523,13 @@ void webserver_init(webhook_callback_t webhook_cb,
       REG("/hotspot-detect*", HTTP_GET, h_captive),   // Apple captive check
       REG("/connecttest*", HTTP_GET, h_captive),      // Windows captive check
   };
+#pragma GCC diagnostic pop
+
   for (auto &u : uris) httpd_register_uri_handler(srv, &u);
 
   ESP_LOGI(TAG, "Web server started with %d endpoints", (int)(sizeof(uris)/sizeof(uris[0])));
 }
 
 ESP_EVENT_DEFINE_BASE(WEBSERVER_EVENTS);
+
+}
