@@ -7,6 +7,7 @@
 #include "modes.h"
 #include "settings.h"
 #include "weather.h"
+#include "esp_timer.h"
 
 #include <cJSON.h>
 #include <cstring>
