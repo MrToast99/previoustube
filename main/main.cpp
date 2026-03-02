@@ -287,9 +287,12 @@ static void spiffs_init() {
       .base_path = SPIFFS_MOUNTPOINT_NO_SLASH,
       .partition_label = nullptr,
       .max_files = 5,
-      .format_if_mount_failed = false,
+      .format_if_mount_failed = true,
   };
-  ESP_ERROR_CHECK(esp_vfs_spiffs_register(&config));
+  esp_err_t err = esp_vfs_spiffs_register(&config);
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "SPIFFS mount failed: %s", esp_err_to_name(err));
+  }
 }
 
 // ─── Main ───────────────────────────────────────────────────
@@ -351,7 +354,7 @@ extern "C" void app_main() {
       leds.set_rgb(i, s.led_r, s.led_g, s.led_b);
   }
 
-  // Web server
+  // Web server - start BEFORE wifi connect so AP mode has config UI
   webserver_init(webhook_handler, on_settings_changed);
 
   // Weather background task
@@ -360,12 +363,13 @@ extern "C" void app_main() {
   // Startup sound
   if (s.sound_enabled) speaker_play_startup();
 
-  // WiFi connect
+  // WiFi connect - or start AP if no credentials
   struct stat st {};
   if (stat(SPIFFS_MOUNTPOINT "wifi.txt", &st) == 0) {
     wifi_read_credentials_and_connect(SPIFFS_MOUNTPOINT "wifi.txt");
   } else {
-    wifi_read_credentials_and_connect(SPIFFS_MOUNTPOINT "wifi.sample.txt");
+    ESP_LOGW(TAG, "No wifi.txt found, starting AP provisioning mode");
+    wifi_start_ap_provisioning();
   }
 
   // If RTC had a valid time, kick off display immediately
